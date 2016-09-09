@@ -21,13 +21,13 @@
     <div class="wrapper">
         <header>
             <div class="filter-options">
-                <div class="filter">
-                    <span class="filter-title">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
                         Hosts Dropdown
                         <span class="caret"></span>
-                    </span>
-                    <ul class="host-list">
-                      
+                    </button>
+                    <ul class="dropdown-menu keep-open-on-click" id="host-list">
+
                     </ul>
                 </div>
             </div>
@@ -41,20 +41,37 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.6.2/jquery.mockjax.min.js"></script>
     <script type="text/javascript">
-      function populateDropdown() {
 
+      function populateDropdown($select, data) {
+        $select.html('');
+
+        $.each(data, function(key, val) {
+          $select.append(
+            '<li><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '">'+ val.name + '<button class="btn btn-danger btn-xs pull-right" onClick={deleteHost(this)}>delete</button></label></li>'
+          );
+        });
+
+        $select.prop('disabled', false);
       }
 
       function fetchHosts() {
-        Mock.setup();
+        Mock.setup(200);
         $.ajax({
           url: '/get-hosts',
           success: function(data) {
-            const hosts = data;
-
+            populateDropdown($("#host-list"), data);
 
           }
-        })
+        });
+      }
+
+      function deleteHost(host) {
+        $.ajax({
+          url: '/delete-host',
+          success: function(data) {
+            console.log(data);
+          }
+        });
       }
     </script>
 

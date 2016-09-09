@@ -313,10 +313,7 @@
     ];
 
     var setup = function(mock_status) {
-
         $.mockjax.clear();
-        console.log(`mock_status: ${mock_status}`);
-
         $.mockjax({
             url: '/get-hosts'
           , status: mock_status
@@ -358,4 +355,10 @@
       , getRandomHost: getRandomHost,
         setup: setup
     };
+});
+
+$(document).ready(function() {
+  $(document).on('click', '.dropdown-menu', function(e) {
+      if ($(this).hasClass('keep-open-on-click')) { e.stopPropagation(); }
+  });
 });
