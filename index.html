@@ -15,13 +15,14 @@
         .filter { float: left; margin-top: 10px; margin-left: 20px; user-select: none; }
         .filter-title { font-size: 18px; font-weight: 100; line-height: 34px; text-shadow: 0 1px 0 rgba(0,0,0,0.6); cursor: pointer; color: #f1f1f2; }
         .dummy-content { width: 100%; height: 600px; text-align: center; padding-top: 40px; }
+        .pull-right { float: right !important; }
     </style>
 </head>
 <body>
     <div class="wrapper">
         <header>
             <div class="filter-options">
-                <div class="dropdown">
+                <div class="dropdown" id="host-dropdown">
                     <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
                         Hosts Dropdown
                         <span class="caret"></span>
@@ -42,25 +43,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.6.2/jquery.mockjax.min.js"></script>
     <script type="text/javascript">
 
+
       function populateDropdown($select, data) {
         $select.html('');
+        $select.append('<li><button btn class="btn-danger btn-xs" onClick={reverseOrder()}>Sort by Reverse</button></div></li>')
 
         $.each(data, function(key, val) {
           $select.append(
-            '<li><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '">'+ val.name + '<button class="btn btn-danger btn-xs pull-right" onClick={deleteHost(this)}>delete</button></label></li>'
+            '<li><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '">'+ val.name + '<div class="pull-right"><button class="btn btn-danger btn-xs pull-right" onClick={deleteHost(' + val.id + ')}>delete</button></div></label></li>'
           );
         });
 
         $select.prop('disabled', false);
       }
 
+      let hosts;
+
       function fetchHosts() {
         Mock.setup(200);
         $.ajax({
           url: '/get-hosts',
           success: function(data) {
-            populateDropdown($("#host-list"), data);
-
+            hosts = data.sort(function(a, b) {
+              if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+              if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+              return 0;
+            })
+            populateDropdown($("#host-list"), hosts);
           }
         });
       }
@@ -73,6 +82,29 @@
           }
         });
       }
+
+      function submitData() {
+        const checkedItems = [];
+        $('#host-list :checked').each(function() {
+          checkedItems.push($(this).val());
+        });
+        console.log(checkedItems);
+      }
+
+      $('#host-dropdown').on('hide.bs.dropdown', function () {
+        submitData();
+      });
+
+      function reverseOrder() {
+        hosts.reverse();
+        $('.dropdown-menu').on('click', function(e) {
+          e.stopPropagation();
+        });
+        populateDropdown($("#host-list"), hosts);
+      }
+
+
+
     </script>
 
     <script onload="fetchHosts()"src="./js/mock.js"></script>
