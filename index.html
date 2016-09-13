@@ -35,7 +35,7 @@
             </div>
         </header>
         <div class="dummy-content">
-            <button type="button" class="btn btn-info btn-lg" id="add-random-host">Add a Random Host</button>
+            <button type="button" onClick=addRandomHost() class="btn btn-info btn-lg" id="add-random-host">Add a Random Host</button>
             <button type="button" class="btn btn-warning btn-lg" id="toggle-error-mode">Toggle Error Mode</button>
         </div>
     </div>
@@ -48,14 +48,18 @@
         Mock.toggleMode();
       }
 
-      function populateDropdown($select, data) {
+      function populateDropdown($select, hostList, randomHosts) {
         $select.html('');
-        $select.append('<li><button btn class="btn-danger btn-xs" onClick={reverseOrder()}>Sort by Reverse</button></div></li>');
-        $select.append('<li><input id="autocomplete" onChange={search()} placeholder="Search hosts"/><button>Search</button></li>')
 
-        $.each(data, function(key, val) {
+        $select.append('<li style="margin: 10px"><input style="margin-right: 70px" class="btn-info btn-xs" type="button" onclick={toggleCheckAll()} id="checkall" value="Check All"/><button btn class="btn-warning btn-xs" onClick={reverseOrder()}>Sort by Reverse</button></div></li>');
+
+        // $select.append('<li><input type="button" onclick={toggleCheckAll()} id="checkall" value="Check All"/></li>');
+
+        $select.append('<li style="margin: 10px"><input id="autocomplete" onChange={search()} placeholder="Search hosts"/><button class="btn btn-primary btn-xs pull-right">Search</button></li>')
+
+        $.each(hostList, function(key, val) {
           $select.append(
-            '<li id="' + val.id + '"><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '">'+ val.name + '</label><button class="btn btn-danger btn-xs pull-right" onClick={deleteHost("'+ val.name + '")}>delete</button></li>'
+            '<li style="margin: 0 10px" id="' + val.id + '"><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '"><span style="margin: 0 10px">'+ val.name + '</span></label><button class="btn btn-danger btn-xs pull-right" onClick={deleteHost("'+ val.id + '")}>delete</button></li>'
           );
         });
 
@@ -64,11 +68,17 @@
 
       let hosts;
 
+      let randomHosts = [];
+
+      function addRandomHost() {
+        randomHosts.push(Mock.getRandomHost());
+      }
+
       function fetchHosts() {
         $.ajax({
           url: '/get-hosts',
           success: function(data) {
-            hosts = data.sort(function(a, b) {
+            hosts = randomHosts.concat(data).sort(function(a, b) {
               if (a.name.toLowerCase() < b.name.toLowerCase()) {
                 return -1;
               }
@@ -76,7 +86,7 @@
                 return 1;
               }
               return 0;
-            })
+            });
             populateDropdown($("#host-list"), hosts);
           },
           error: function(resp) {
@@ -86,7 +96,13 @@
       }
 
       function deleteHost(host) {
-        debugger
+        for(let i = 0; i < randomHosts.length; i++) {
+          if(randomHosts[i].id === host) {
+              randomHosts.splice(i, 1);
+              break;
+          }
+        }
+
         $.ajax({
           url: '/delete-host',
           success: function(data) {
@@ -97,7 +113,6 @@
             alert('The server encountered an unexpected condition which prevented it from fulfilling the request. Hint: Try clicking the toggle error mode button.');
           }
         });
-
       }
 
       function submitData() {
@@ -110,6 +125,7 @@
 
       $('#host-dropdown').on('hide.bs.dropdown', function () {
         submitData();
+        $("#host-list").html('');
       });
 
       function reverseOrder() {
@@ -135,6 +151,17 @@
         hosts = matches;
       }
 
+      function toggleCheckAll() {
+        if ($('#checkall').val() === "Check All") {
+          $('input:checkbox').prop('checked', true);
+          $('#checkall').val('Uncheck All');
+        } else {
+          $('input:checkbox').prop('checked', false);
+          $('#checkall').val('Check All');
+        }
+
+      }
+
       $(document).ready(function() {
         $(document).on('click', '.dropdown-menu', function(e) {
             if ($(this).hasClass('keep-open-on-click')) { e.stopPropagation(); }
@@ -144,8 +171,8 @@
     </script>
 
     <script onload="prepPage()"src="./js/mock.js">
-
     </script>
+
     <script>
     $('#toggle-error-mode').on('click', function() {
       Mock.toggleMode();
