@@ -24,7 +24,7 @@
         <header>
             <div class="filter-options">
                 <div class="dropdown" id="host-dropdown">
-                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <button onClick=fetchHosts() class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
                         Hosts Dropdown
                         <span class="caret"></span>
                     </button>
@@ -43,16 +43,19 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.6.2/jquery.mockjax.min.js"></script>
     <script type="text/javascript">
-
+      function prepPage() {
+        Mock.toggleMode();
+        Mock.toggleMode();
+      }
 
       function populateDropdown($select, data) {
         $select.html('');
         $select.append('<li><button btn class="btn-danger btn-xs" onClick={reverseOrder()}>Sort by Reverse</button></div></li>');
-        $select.append('<li><input id="autocomplete" onChange={search()} placeholder="Search hosts"</li>')
+        $select.append('<li><input id="autocomplete" onChange={search()} placeholder="Search hosts"/><button>Search</button></li>')
 
         $.each(data, function(key, val) {
           $select.append(
-            '<li><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '">'+ val.name + '<div class="pull-right"><button class="btn btn-danger btn-xs pull-right" onClick={deleteHost(' + val.id + ')}>delete</button></div></label></li>'
+            '<li id="' + val.id + '"><label><input type="checkbox" id="' + val.id + '" value="' + val.name + '">'+ val.name + '</label><button class="btn btn-danger btn-xs pull-right" onClick={deleteHost("'+ val.name + '")}>delete</button></li>'
           );
         });
 
@@ -62,27 +65,39 @@
       let hosts;
 
       function fetchHosts() {
-        Mock.setup(200);
         $.ajax({
           url: '/get-hosts',
           success: function(data) {
             hosts = data.sort(function(a, b) {
-              if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
-              if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+              if (a.name.toLowerCase() < b.name.toLowerCase()) {
+                return -1;
+              }
+              if (a.name.toLowerCase() > b.name.toLowerCase()) {
+                return 1;
+              }
               return 0;
             })
             populateDropdown($("#host-list"), hosts);
+          },
+          error: function(resp) {
+            alert('The server encountered an unexpected condition which prevented it from fulfilling the request. Hint: Try clicking the toggle error mode button.');
           }
         });
       }
 
       function deleteHost(host) {
+        debugger
         $.ajax({
           url: '/delete-host',
           success: function(data) {
+            $("#" + host).remove();
             console.log(data);
+          },
+          error: function() {
+            alert('The server encountered an unexpected condition which prevented it from fulfilling the request. Hint: Try clicking the toggle error mode button.');
           }
         });
+
       }
 
       function submitData() {
@@ -95,7 +110,6 @@
 
       $('#host-dropdown').on('hide.bs.dropdown', function () {
         submitData();
-        fetchHosts();
       });
 
       function reverseOrder() {
@@ -109,10 +123,6 @@
       function search() {
         const reg = new RegExp($("#autocomplete").val().toLowerCase());
 
-        let names = hosts.map(function(obj) {
-          return obj['name'];
-        });
-
         const matches = [];
 
         hosts.forEach(host => {
@@ -125,11 +135,22 @@
         hosts = matches;
       }
 
+      $(document).ready(function() {
+        $(document).on('click', '.dropdown-menu', function(e) {
+            if ($(this).hasClass('keep-open-on-click')) { e.stopPropagation(); }
+        });
+      });
+
     </script>
 
-    <script onload="fetchHosts()"src="./js/mock.js"></script>
+    <script onload="prepPage()"src="./js/mock.js">
+
+    </script>
     <script>
-    $('#toggle-error-mode').on('click', function() { Mock.toggleMode(); });
+    $('#toggle-error-mode').on('click', function() {
+      Mock.toggleMode();
+      $("#host-list").html('');
+    });
     </script>
 
 
